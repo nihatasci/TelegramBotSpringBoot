@@ -3,6 +3,7 @@ package com.example.TelegramBotSpringBoot;
 import com.example.TelegramBotSpringBoot.service.CurrencyCorversionService;
 import com.example.TelegramBotSpringBoot.service.CurrencyModeService;
 import lombok.SneakyThrows;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
@@ -28,14 +29,21 @@ public class TestBot extends TelegramLongPollingBot {
     private final CurrencyModeService currecyModeService = CurrencyModeService.getInstance();
     private final CurrencyCorversionService currencyCorversionService = (CurrencyCorversionService) CurrencyCorversionService.getInstance();
 
+
+    @Value("${telegramBotName}")
+    private String userName;
+
+    @Value("${telegramBotToken}")
+    private String token;
+
     @Override
     public String getBotUsername() {
-        return "@telegram bot name";
+        return userName;
     }
 
     @Override
     public String getBotToken() {
-        return "api key";
+        return token;
     }
 
     @Override

@@ -6,6 +6,7 @@ import com.example.TelegramBotSpringBoot.service.CurrencyCorversionService;
 import lombok.SneakyThrows;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -27,7 +28,9 @@ import java.util.Arrays;
 public class ConsumeWebServise implements CurrencyCorversionService {
     @Autowired
     RestTemplate restTemplate;
-    String url = "https://v6.exchangerate-api.com/v6/yourapi";
+
+    @Value("${url}")
+    private String url;
 
     public String getCurrencyInfo() {
         HttpHeaders headers = new HttpHeaders();
