@@ -15,16 +15,9 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
 @SpringBootApplication
 public class TelegramBotSpringBootApplication  {
-
-
-
+	
 	public static void main(String[] args) throws TelegramApiException {
 		SpringApplication.run(TelegramBotSpringBootApplication.class, args);
 
-	}
-
-	@Bean
-	public RestTemplate getRestTemplate() {
-		return new RestTemplate();
 	}
 }
