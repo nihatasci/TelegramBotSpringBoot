@@ -4,6 +4,10 @@ import com.example.TelegramBotSpringBoot.service.CurrencyCorversionService;
 import com.example.TelegramBotSpringBoot.service.CurrencyModeService;
 import lombok.SneakyThrows;
 import org.springframework.boot.SpringApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.web.client.RestTemplate;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -17,25 +21,28 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Response;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalTime;
+import java.util.*;
 
+
+@EnableScheduling
 public class TestBot extends TelegramLongPollingBot {
 
     private final CurrencyModeService currecyModeService = CurrencyModeService.getInstance();
     private final CurrencyCorversionService currencyCorversionService = (CurrencyCorversionService) CurrencyCorversionService.getInstance();
 
+    double lastValue=0.0;
     @Override
     public String getBotUsername() {
-        return "@telegram bot name";
+        return "@";
     }
 
     @Override
     public String getBotToken() {
-        return "api key";
+        return "";
     }
 
     @Override
@@ -46,6 +53,7 @@ public class TestBot extends TelegramLongPollingBot {
         else if (update.hasMessage()){
             handleMessage(update.getMessage());
         }
+
     }
 
     @SneakyThrows
@@ -120,6 +128,7 @@ public class TestBot extends TelegramLongPollingBot {
             BigDecimal ratio = currencyCorversionService.getConversionRatio(originalCurrency, targetCurrency);
 
             if (value.isPresent()){
+                lastValue = value.get()*ratio.doubleValue();
                 execute(SendMessage.builder()
                         .chatId(message.getChatId().toString())
                         .text(String.format("%4.2f %s is %4.2f %s",value.get(),originalCurrency,(value.get()*ratio.doubleValue()),targetCurrency))
@@ -142,6 +151,32 @@ public class TestBot extends TelegramLongPollingBot {
     }
 
 
+    @Scheduled(cron = "")
+    public void sendMessage(Message message) {
+        Currency originalCurrency = currecyModeService.getOriginalCurrency(message.getChatId());
+        Currency targetCurrency = currecyModeService.getTargetCurrency(message.getChatId());
+        BigDecimal ratio = currencyCorversionService.getConversionRatio(originalCurrency, targetCurrency);
+
+        String messageText = message.getText();
+        Optional<Double> value = parseDouble(messageText);
+
+        if(lastValue<(value.get()*ratio.doubleValue())*0.95 || lastValue>(value.get()*ratio.doubleValue())*0.95 ){
+            try {
+                lastValue=value.get()*ratio.doubleValue();
+                execute(SendMessage.builder()
+                        .chatId(message.getChatId().toString())
+                        .text(String.format("%4.2f %s is %4.2f %s",value.get(),originalCurrency,(value.get()*ratio.doubleValue()),targetCurrency))
+                        .build());
+            } catch (Exception e) {
+                System.err.println("Couldn't successfully send message, " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+
+
     public static void main(String[] args) {
         TestBot bot = new TestBot();
         TelegramBotsApi telegramBotsApi = null;
@@ -152,6 +187,19 @@ public class TestBot extends TelegramLongPollingBot {
             throw new RuntimeException(e);
         }
 
+
     }
 
-}
+
+
+    }
+
+
+
+
+    /*@Bean
+    public RestTemplate getRestTemplate() {
+        return new RestTemplate();
+    }*/
+
+
